@@ -9,7 +9,8 @@ export class Logger {
         return `[${timestamp}] [${level}] [${this.context}] ${message}`;
     }
     info(message, ...args) {
-        console.log(this.formatMessage('INFO', message), ...args);
+        // Use stderr for logging to avoid interfering with JSON-RPC communication
+        console.error(this.formatMessage('INFO', message), ...args);
     }
     error(message, error) {
         const errorMessage = error instanceof Error
@@ -18,6 +19,6 @@ export class Logger {
         console.error(this.formatMessage('ERROR', message), errorMessage || '');
     }
     warn(message, ...args) {
-        console.warn(this.formatMessage('WARN', message), ...args);
+        console.error(this.formatMessage('WARN', message), ...args);
     }
 }

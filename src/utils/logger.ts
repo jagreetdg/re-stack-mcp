@@ -12,7 +12,8 @@ export class Logger {
     }
 
     info(message: string, ...args: any[]): void {
-        console.log(this.formatMessage('INFO', message), ...args);
+        // Use stderr for logging to avoid interfering with JSON-RPC communication
+        console.error(this.formatMessage('INFO', message), ...args);
     }
 
     error(message: string, error?: unknown): void {
@@ -26,6 +27,6 @@ export class Logger {
     }
 
     warn(message: string, ...args: any[]): void {
-        console.warn(this.formatMessage('WARN', message), ...args);
+        console.error(this.formatMessage('WARN', message), ...args);
     }
 }

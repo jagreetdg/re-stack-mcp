@@ -4,6 +4,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
     CallToolRequestSchema,
     ListToolsRequestSchema,
+    McpError,
+    ErrorCode
 } from '@modelcontextprotocol/sdk/types.js';
 import { StackExchangeApiClient } from '../api/stackexchange.js';
 import { Logger } from '../utils/logger.js';

@@ -52,33 +52,16 @@ export class UserTools extends BaseTool {
                         );
                     }
 
-                    const user = await this.apiClient.getUserProfile(
-                        args.user_id,
-                        { site: args.site }
-                    );
+                    const profile = await this.apiClient.getUserProfile(args.user_id, {
+                        site: args.site
+                    });
 
-                    // Format the response according to MCP protocol
-                    const userData = {
-                        user_id: user.user_id,
-                        display_name: user.display_name,
-                        reputation: user.reputation,
-                        creation_date: new Date(user.creation_date * 1000).toISOString(),
-                        profile_image: user.profile_image
-                    };
-
-                    // Ensure response follows MCP protocol exactly
                     return {
-                        content: [
-                            {
-                                type: 'application/json',
-                                value: userData,
-                                _meta: {
-                                    contentType: 'application/json'
-                                }
-                            }
-                        ]
+                        content: [{
+                            type: 'text',
+                            text: JSON.stringify(profile, null, 2)
+                        }]
                     };
-
                 default:
                     throw new McpError(
                         ErrorCode.MethodNotFound,

@@ -18,9 +18,44 @@ export class StackExchangeApiClient {
             timeout: 10000,
             headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
             }
         });
+
+        // Add request interceptor to log request details
+        this.client.interceptors.request.use((config) => {
+            this.logger.debug('Making request', {
+                method: config.method,
+                url: config.url,
+                params: config.params,
+                headers: config.headers
+            });
+            return config;
+        });
+
+        // Add response interceptor to log response details
+        this.client.interceptors.response.use(
+            (response) => {
+                this.logger.debug('Received response', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers,
+                    data: response.data
+                });
+                return response;
+            },
+            (error) => {
+                if (axios.isAxiosError(error)) {
+                    this.logger.error('Request failed', {
+                        status: error.response?.status,
+                        statusText: error.response?.statusText,
+                        data: error.response?.data,
+                        headers: error.response?.headers,
+                        config: error.config
+                    });
+                }
+                throw error;
+            }
+        );
     }
 
     async getUserProfile(

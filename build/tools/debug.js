@@ -37,16 +37,18 @@ export class DebugTools extends BaseTool {
         switch (toolName) {
             case 'get_debug_logs':
                 const lastNLines = args.last_n_lines || 50;
+                const logs = this.debugLog.slice(-lastNLines);
+                const env = {
+                    cwd: process.cwd(),
+                    user: process.env.USERNAME,
+                    env: process.env.NODE_ENV,
+                    pid: process.pid
+                };
                 return {
-                    content: {
-                        logs: this.debugLog.slice(-lastNLines),
-                        environment: {
-                            cwd: process.cwd(),
-                            user: process.env.USERNAME,
-                            env: process.env.NODE_ENV,
-                            pid: process.pid
-                        }
-                    }
+                    content: [{
+                            type: 'text',
+                            text: JSON.stringify({ logs, environment: env }, null, 2)
+                        }]
                 };
             default:
                 throw new Error(`Unknown tool: ${toolName}`);

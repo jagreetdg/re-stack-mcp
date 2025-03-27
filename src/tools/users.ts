@@ -57,17 +57,24 @@ export class UserTools extends BaseTool {
                         { site: args.site }
                     );
 
+                    // Format the response according to MCP protocol
+                    const userData = {
+                        user_id: user.user_id,
+                        display_name: user.display_name,
+                        reputation: user.reputation,
+                        creation_date: new Date(user.creation_date * 1000).toISOString(),
+                        profile_image: user.profile_image
+                    };
+
+                    // Ensure response follows MCP protocol exactly
                     return {
                         content: [
                             {
-                                type: 'text',
-                                text: JSON.stringify({
-                                    user_id: user.user_id,
-                                    display_name: user.display_name,
-                                    reputation: user.reputation,
-                                    creation_date: new Date(user.creation_date * 1000).toISOString(),
-                                    profile_image: user.profile_image
-                                }, null, 2)
+                                type: 'application/json',
+                                value: userData,
+                                _meta: {
+                                    contentType: 'application/json'
+                                }
                             }
                         ]
                     };

@@ -39,17 +39,31 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StackExchangeApiClient = void 0;
 // src/api/stackexchange.ts
 var axios_1 = require("axios");
+var config_1 = require("../config.js");
+
 var StackExchangeApiClient = /** @class */ (function () {
     function StackExchangeApiClient(logger) {
         this.logger = logger;
+        console.error('[DEBUG] Initializing StackExchange API client');
+        if (!config_1.config.stackExchange.apiKey) {
+            const error = new Error('Stack Exchange API key not configured. Please set STACK_EXCHANGE_API_KEY environment variable.');
+            this.logger.error(error.message);
+            console.error('[FATAL] ' + error.message);
+            throw error;
+        }
+        console.error('[DEBUG] API key found, creating axios client');
         this.client = axios_1.default.create({
-            baseURL: 'https://api.stackexchange.com/2.3',
-            timeout: 10000,
+            baseURL: 'https://api.stackexchange.com/' + config_1.config.stackExchange.apiVersion,
+            timeout: 30000, // Increased timeout to 30 seconds
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
+            },
+            params: {
+                key: config_1.config.stackExchange.apiKey
             }
         });
+        console.error('[DEBUG] StackExchange API client initialized successfully');
     }
     StackExchangeApiClient.prototype.getUserProfile = function (userId_1) {
         return __awaiter(this, arguments, void 0, function (userId, options) {
@@ -58,6 +72,7 @@ var StackExchangeApiClient = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        console.error(`[DEBUG] Fetching user profile for ID: ${userId}`);
                         _a.trys.push([0, 2, , 3]);
                         this.logger.info("Fetching user profile: ".concat(userId, " on ").concat(options.site || 'stackoverflow'));
                         return [4 /*yield*/, this.client.get('/users/' + userId, {
@@ -68,12 +83,22 @@ var StackExchangeApiClient = /** @class */ (function () {
                             })];
                     case 1:
                         response = _a.sent();
+                        console.error(`[DEBUG] Received response for user ${userId}`);
                         if (!response.data.items || response.data.items.length === 0) {
-                            throw new Error("User with ID ".concat(userId, " not found"));
+                            const error = new Error(`User with ID ${userId} not found`);
+                            console.error('[ERROR] ' + error.message);
+                            throw error;
                         }
                         return [2 /*return*/, response.data.items[0]];
                     case 2:
                         error_1 = _a.sent();
+                        console.error('[ERROR] Failed to fetch user profile:', error_1.message);
+                        if (error_1.response) {
+                            console.error('[ERROR] API Response:', {
+                                status: error_1.response.status,
+                                data: error_1.response.data
+                            });
+                        }
                         this.logger.error('Failed to fetch user profile', error_1);
                         throw error_1;
                     case 3: return [2 /*return*/];
@@ -88,6 +113,7 @@ var StackExchangeApiClient = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        console.error(`[DEBUG] Searching questions: ${query}`);
                         _a.trys.push([0, 2, , 3]);
                         this.logger.info("Searching questions: ".concat(query, " on ").concat(options.site || 'stackoverflow'));
                         return [4 /*yield*/, this.client.get('/search', {
@@ -102,9 +128,17 @@ var StackExchangeApiClient = /** @class */ (function () {
                             })];
                     case 1:
                         response = _a.sent();
+                        console.error(`[DEBUG] Received response for search query ${query}`);
                         return [2 /*return*/, response.data.items];
                     case 2:
                         error_2 = _a.sent();
+                        console.error('[ERROR] Failed to search questions:', error_2.message);
+                        if (error_2.response) {
+                            console.error('[ERROR] API Response:', {
+                                status: error_2.response.status,
+                                data: error_2.response.data
+                            });
+                        }
                         this.logger.error('Failed to search questions', error_2);
                         throw error_2;
                     case 3: return [2 /*return*/];
@@ -115,3 +149,4 @@ var StackExchangeApiClient = /** @class */ (function () {
     return StackExchangeApiClient;
 }());
 exports.StackExchangeApiClient = StackExchangeApiClient;
+//# sourceMappingURL=stackexchange.js.map

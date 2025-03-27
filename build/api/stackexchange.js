@@ -17,11 +17,22 @@ export class StackExchangeApiClient {
     async getUserProfile(userId, options = {}) {
         try {
             this.logger.info(`Fetching user profile: ${userId} on ${options.site || 'stackoverflow'}`);
+            this.logger.debug('Making Stack Exchange API request', {
+                userId,
+                options,
+                url: '/users/' + userId,
+                headers: this.client.defaults.headers
+            });
             const response = await this.client.get('/users/' + userId, {
                 params: {
                     site: options.site || 'stackoverflow',
                     filter: 'default'
                 }
+            });
+            this.logger.debug('Received Stack Exchange API response', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers
             });
             if (!response.data.items || response.data.items.length === 0) {
                 throw new Error(`User with ID ${userId} not found`);
@@ -29,13 +40,35 @@ export class StackExchangeApiClient {
             return response.data.items[0];
         }
         catch (error) {
-            this.logger.error('Failed to fetch user profile', error);
+            if (axios.isAxiosError(error)) {
+                this.logger.error('Stack Exchange API request failed', {
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    data: error.response?.data,
+                    headers: error.response?.headers,
+                    config: {
+                        url: error.config?.url,
+                        method: error.config?.method,
+                        headers: error.config?.headers,
+                        params: error.config?.params
+                    }
+                });
+            }
+            else {
+                this.logger.error('Failed to fetch user profile', error);
+            }
             throw error;
         }
     }
     async searchQuestions(query, options = {}) {
         try {
             this.logger.info(`Searching questions: ${query} on ${options.site || 'stackoverflow'}`);
+            this.logger.debug('Making Stack Exchange API request', {
+                query,
+                options,
+                url: '/search',
+                headers: this.client.defaults.headers
+            });
             const response = await this.client.get('/search', {
                 params: {
                     intitle: query,
@@ -45,6 +78,11 @@ export class StackExchangeApiClient {
                     pagesize: options.pagesize || 10,
                     filter: 'default'
                 }
+            });
+            this.logger.debug('Received Stack Exchange API response', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers
             });
             return response.data.items;
         }

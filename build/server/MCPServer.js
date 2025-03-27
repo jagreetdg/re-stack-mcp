@@ -1,10 +1,11 @@
 // src/server/MCPServer.ts
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema, ListToolsRequestSchema, } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { StackExchangeApiClient } from '../api/stackexchange.js';
 import { Logger } from '../utils/logger.js';
 import { UserTools } from '../tools/users.js';
+import { DebugTools } from '../tools/debug.js';
 export class StackExchangeMCPServer {
     server;
     logger;
@@ -23,7 +24,8 @@ export class StackExchangeMCPServer {
             process.exit(1);
         }
         this.tools = [
-            new UserTools(this.apiClient, this.logger)
+            new UserTools(this.apiClient, this.logger),
+            new DebugTools(this.logger)
         ];
         console.error('[DEBUG] Tools initialized');
         this.logger.info('Initializing StackExchange MCP server');

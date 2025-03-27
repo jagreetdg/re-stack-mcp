@@ -11,6 +11,7 @@ import { StackExchangeApiClient } from '../api/stackexchange.js';
 import { Logger } from '../utils/logger.js';
 import { BaseTool } from '../tools/base-tool.js';
 import { UserTools } from '../tools/users.js';
+import { DebugTools } from '../tools/debug.js';
 
 export class StackExchangeMCPServer {
     private server: Server;
@@ -32,7 +33,8 @@ export class StackExchangeMCPServer {
         }
 
         this.tools = [
-            new UserTools(this.apiClient, this.logger)
+            new UserTools(this.apiClient, this.logger),
+            new DebugTools(this.logger)
         ];
         console.error('[DEBUG] Tools initialized');
 

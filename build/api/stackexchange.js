@@ -369,4 +369,177 @@ export class StackExchangeApiClient {
             throw error;
         }
     }
+    async getPosts(options = {}) {
+        try {
+            this.logger.info(`Fetching posts on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.get('/posts', {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    page: options.page,
+                    pagesize: options.pagesize,
+                    fromdate: options.fromDate,
+                    todate: options.toDate,
+                    order: options.order || 'desc',
+                    sort: options.sort || 'activity',
+                    min: options.min,
+                    max: options.max,
+                    filter: options.filter
+                }
+            });
+            return response.data.items;
+        }
+        catch (error) {
+            this.logger.error('Failed to fetch posts', error);
+            throw error;
+        }
+    }
+    async getPostsByIds(postIds, options = {}) {
+        try {
+            this.logger.info(`Fetching posts by IDs: ${postIds.join(';')} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.get(`/posts/${postIds.join(';')}`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    filter: options.filter
+                }
+            });
+            return response.data.items;
+        }
+        catch (error) {
+            this.logger.error('Failed to fetch posts by IDs', error);
+            throw error;
+        }
+    }
+    async getPostComments(postId, options = {}) {
+        try {
+            this.logger.info(`Fetching comments for post ${postId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.get(`/posts/${postId}/comments`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    page: options.page,
+                    pagesize: options.pagesize,
+                    fromdate: options.fromDate,
+                    todate: options.toDate,
+                    order: options.order || 'desc',
+                    sort: options.sort || 'creation',
+                    filter: options.filter
+                }
+            });
+            return response.data.items;
+        }
+        catch (error) {
+            this.logger.error('Failed to fetch post comments', error);
+            throw error;
+        }
+    }
+    async addComment(postId, comment, accessToken, apiKey, options = {}) {
+        try {
+            this.logger.info(`Adding comment to post ${postId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.post(`/posts/${postId}/comments/add`, {
+                body: comment.body
+            }, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: accessToken,
+                    key: apiKey,
+                    filter: options.filter,
+                    preview: comment.preview
+                }
+            });
+            return response.data.items[0];
+        }
+        catch (error) {
+            this.logger.error('Failed to add comment', error);
+            throw error;
+        }
+    }
+    async renderComment(postId, comment, options = {}) {
+        try {
+            this.logger.info(`Rendering comment for post ${postId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.post(`/posts/${postId}/comments/render`, {
+                body: comment.body
+            }, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    filter: options.filter
+                }
+            });
+            return response.data.items[0];
+        }
+        catch (error) {
+            this.logger.error('Failed to render comment', error);
+            throw error;
+        }
+    }
+    async getPostRevisions(postId, options = {}) {
+        try {
+            this.logger.info(`Fetching revisions for post ${postId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.get(`/posts/${postId}/revisions`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    filter: options.filter
+                }
+            });
+            return response.data.items;
+        }
+        catch (error) {
+            this.logger.error('Failed to fetch post revisions', error);
+            throw error;
+        }
+    }
+    async getPostSuggestedEdits(postId, options = {}) {
+        try {
+            this.logger.info(`Fetching suggested edits for post ${postId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.get(`/posts/${postId}/suggested-edits`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    filter: options.filter
+                }
+            });
+            return response.data.items;
+        }
+        catch (error) {
+            this.logger.error('Failed to fetch post suggested edits', error);
+            throw error;
+        }
+    }
+    async getLinkedQuestions(questionId, options = {}) {
+        try {
+            this.logger.info(`Fetching linked questions for question ${questionId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.get(`/questions/${questionId}/linked`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    page: options.page,
+                    pagesize: options.pagesize,
+                    order: options.order || 'desc',
+                    sort: options.sort || 'activity',
+                    filter: options.filter
+                }
+            });
+            return response.data.items;
+        }
+        catch (error) {
+            this.logger.error('Failed to fetch linked questions', error);
+            throw error;
+        }
+    }
+    async getRelatedQuestions(questionId, options = {}) {
+        try {
+            this.logger.info(`Fetching related questions for question ${questionId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.get(`/questions/${questionId}/related`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    page: options.page,
+                    pagesize: options.pagesize,
+                    order: options.order || 'desc',
+                    sort: options.sort || 'activity',
+                    filter: options.filter
+                }
+            });
+            return response.data.items;
+        }
+        catch (error) {
+            this.logger.error('Failed to fetch related questions', error);
+            throw error;
+        }
+    }
 }

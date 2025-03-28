@@ -10,7 +10,12 @@ import {
     TagInfo,
     ApiResponse,
     SearchExcerptOptions,
-    SearchExcerptResponse
+    SearchExcerptResponse,
+    PostResponse,
+    CommentRequest,
+    CommentRenderResponse,
+    PostRevision,
+    SuggestedEdit
 } from './interfaces.js';
 import { Logger } from '../utils/logger.js';
 
@@ -427,6 +432,197 @@ export class StackExchangeApiClient {
             return response.data.items;
         } catch (error) {
             this.logger.error('Failed to search excerpts', error);
+            throw error;
+        }
+    }
+
+    async getPosts(options: StackExchangeApiOptions = {}): Promise<PostResponse[]> {
+        try {
+            this.logger.info(`Fetching posts on ${options.site || 'stackoverflow'}`);
+
+            const response = await this.client.get<ApiResponse<PostResponse>>('/posts', {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    page: options.page,
+                    pagesize: options.pagesize,
+                    fromdate: options.fromDate,
+                    todate: options.toDate,
+                    order: options.order || 'desc',
+                    sort: options.sort || 'activity',
+                    min: options.min,
+                    max: options.max,
+                    filter: options.filter
+                }
+            });
+
+            return response.data.items;
+        } catch (error) {
+            this.logger.error('Failed to fetch posts', error);
+            throw error;
+        }
+    }
+
+    async getPostsByIds(postIds: number[], options: StackExchangeApiOptions = {}): Promise<PostResponse[]> {
+        try {
+            this.logger.info(`Fetching posts by IDs: ${postIds.join(';')} on ${options.site || 'stackoverflow'}`);
+
+            const response = await this.client.get<ApiResponse<PostResponse>>(`/posts/${postIds.join(';')}`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    filter: options.filter
+                }
+            });
+
+            return response.data.items;
+        } catch (error) {
+            this.logger.error('Failed to fetch posts by IDs', error);
+            throw error;
+        }
+    }
+
+    async getPostComments(postId: number, options: StackExchangeApiOptions = {}): Promise<CommentResponse[]> {
+        try {
+            this.logger.info(`Fetching comments for post ${postId} on ${options.site || 'stackoverflow'}`);
+
+            const response = await this.client.get<ApiResponse<CommentResponse>>(`/posts/${postId}/comments`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    page: options.page,
+                    pagesize: options.pagesize,
+                    fromdate: options.fromDate,
+                    todate: options.toDate,
+                    order: options.order || 'desc',
+                    sort: options.sort || 'creation',
+                    filter: options.filter
+                }
+            });
+
+            return response.data.items;
+        } catch (error) {
+            this.logger.error('Failed to fetch post comments', error);
+            throw error;
+        }
+    }
+
+    async addComment(postId: number, comment: CommentRequest, accessToken: string, apiKey: string, options: StackExchangeApiOptions = {}): Promise<CommentResponse> {
+        try {
+            this.logger.info(`Adding comment to post ${postId} on ${options.site || 'stackoverflow'}`);
+
+            const response = await this.client.post<ApiResponse<CommentResponse>>(`/posts/${postId}/comments/add`, {
+                body: comment.body
+            }, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: accessToken,
+                    key: apiKey,
+                    filter: options.filter,
+                    preview: comment.preview
+                }
+            });
+
+            return response.data.items[0];
+        } catch (error) {
+            this.logger.error('Failed to add comment', error);
+            throw error;
+        }
+    }
+
+    async renderComment(postId: number, comment: CommentRequest, options: StackExchangeApiOptions = {}): Promise<CommentRenderResponse> {
+        try {
+            this.logger.info(`Rendering comment for post ${postId} on ${options.site || 'stackoverflow'}`);
+
+            const response = await this.client.post<ApiResponse<CommentRenderResponse>>(`/posts/${postId}/comments/render`, {
+                body: comment.body
+            }, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    filter: options.filter
+                }
+            });
+
+            return response.data.items[0];
+        } catch (error) {
+            this.logger.error('Failed to render comment', error);
+            throw error;
+        }
+    }
+
+    async getPostRevisions(postId: number, options: StackExchangeApiOptions = {}): Promise<PostRevision[]> {
+        try {
+            this.logger.info(`Fetching revisions for post ${postId} on ${options.site || 'stackoverflow'}`);
+
+            const response = await this.client.get<ApiResponse<PostRevision>>(`/posts/${postId}/revisions`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    filter: options.filter
+                }
+            });
+
+            return response.data.items;
+        } catch (error) {
+            this.logger.error('Failed to fetch post revisions', error);
+            throw error;
+        }
+    }
+
+    async getPostSuggestedEdits(postId: number, options: StackExchangeApiOptions = {}): Promise<SuggestedEdit[]> {
+        try {
+            this.logger.info(`Fetching suggested edits for post ${postId} on ${options.site || 'stackoverflow'}`);
+
+            const response = await this.client.get<ApiResponse<SuggestedEdit>>(`/posts/${postId}/suggested-edits`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    filter: options.filter
+                }
+            });
+
+            return response.data.items;
+        } catch (error) {
+            this.logger.error('Failed to fetch post suggested edits', error);
+            throw error;
+        }
+    }
+
+    async getLinkedQuestions(questionId: number, options: StackExchangeApiOptions = {}): Promise<QuestionResponse[]> {
+        try {
+            this.logger.info(`Fetching linked questions for question ${questionId} on ${options.site || 'stackoverflow'}`);
+
+            const response = await this.client.get<ApiResponse<QuestionResponse>>(`/questions/${questionId}/linked`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    page: options.page,
+                    pagesize: options.pagesize,
+                    order: options.order || 'desc',
+                    sort: options.sort || 'activity',
+                    filter: options.filter
+                }
+            });
+
+            return response.data.items;
+        } catch (error) {
+            this.logger.error('Failed to fetch linked questions', error);
+            throw error;
+        }
+    }
+
+    async getRelatedQuestions(questionId: number, options: StackExchangeApiOptions = {}): Promise<QuestionResponse[]> {
+        try {
+            this.logger.info(`Fetching related questions for question ${questionId} on ${options.site || 'stackoverflow'}`);
+
+            const response = await this.client.get<ApiResponse<QuestionResponse>>(`/questions/${questionId}/related`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    page: options.page,
+                    pagesize: options.pagesize,
+                    order: options.order || 'desc',
+                    sort: options.sort || 'activity',
+                    filter: options.filter
+                }
+            });
+
+            return response.data.items;
+        } catch (error) {
+            this.logger.error('Failed to fetch related questions', error);
             throw error;
         }
     }

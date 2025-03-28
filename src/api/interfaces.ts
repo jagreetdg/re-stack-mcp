@@ -117,6 +117,53 @@ export interface CommentResponse {
     edited?: boolean;
 }
 
+export interface PostResponse {
+    post_id: number;
+    post_type: 'question' | 'answer';
+    title?: string;  // Only for questions
+    question_id?: number;  // Only for answers
+    owner: QuestionOwner;
+    creation_date: number;
+    score: number;
+    comment_count?: number;
+    body?: string;
+}
+
+export interface PostRevision {
+    revision_guid: string;
+    post_id: number;
+    creation_date: number;
+    user: QuestionOwner;
+    comment: string;
+    revision_type: string;
+    post_type?: string;
+    title?: string;
+    body?: string;
+    tags?: string[];
+}
+
+export interface SuggestedEdit {
+    suggested_edit_id: number;
+    post_id: number;
+    owner: QuestionOwner;
+    creation_date: number;
+    comment: string;
+    approval_date?: number;
+    rejection_date?: number;
+    title?: string;
+    body?: string;
+    tags?: string[];
+}
+
+export interface CommentRequest {
+    body: string;
+    preview?: boolean;
+}
+
+export interface CommentRenderResponse {
+    rendered_body: string;
+}
+
 export interface ApiResponse<T> {
     items: T[];
     has_more?: boolean;

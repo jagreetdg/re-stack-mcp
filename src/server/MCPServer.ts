@@ -15,6 +15,7 @@ import { QuestionTools } from '../tools/questions.js';
 import { AnswerTools } from '../tools/answers.js';
 import { CommentTools } from '../tools/comments.js';
 import { TagTools } from '../tools/tags.js';
+import { PostTools } from '../tools/posts.js';
 import { DebugTools } from '../tools/debug.js';
 
 export class StackExchangeMCPServer {
@@ -42,6 +43,7 @@ export class StackExchangeMCPServer {
             new AnswerTools(this.apiClient, this.logger),
             new CommentTools(this.apiClient, this.logger),
             new TagTools(this.apiClient, this.logger),
+            new PostTools(this.apiClient, this.logger),
             new DebugTools(this.logger)
         ];
         console.error('[DEBUG] Tools initialized');

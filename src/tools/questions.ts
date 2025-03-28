@@ -1,15 +1,20 @@
 // src/tools/questions.ts
-import { BaseTool } from './base-tool.js';
+import { BaseTool, ToolDefinition } from './base-tool.js';
+import { StackExchangeApiClient } from '../api/stackexchange.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
+import { Logger } from '../utils/logger.js';
+
 export class QuestionTools extends BaseTool {
-    apiClient;
-    logger;
-    constructor(apiClient, logger) {
+    private apiClient: StackExchangeApiClient;
+    private logger: Logger;
+
+    constructor(apiClient: StackExchangeApiClient, logger: Logger) {
         super();
         this.apiClient = apiClient;
         this.logger = logger;
     }
-    getToolDefinitions() {
+
+    getToolDefinitions(): ToolDefinition[] {
         return [
             {
                 name: 'get_questions',
@@ -289,77 +294,101 @@ export class QuestionTools extends BaseTool {
             }
         ];
     }
-    async handleToolCall(toolName, args) {
+
+    async handleToolCall(
+        toolName: string,
+        args: Record<string, any>
+    ): Promise<{ content: any[] }> {
         try {
             switch (toolName) {
                 case 'get_questions': {
                     const questions = await this.apiClient.getQuestions(args);
                     return {
                         content: [{
-                                type: 'text',
-                                text: JSON.stringify(questions, null, 2)
-                            }]
+                            type: 'text',
+                            text: JSON.stringify(questions, null, 2)
+                        }]
                     };
                 }
+
                 case 'get_question_by_id': {
                     if (!args.question_id) {
-                        throw new McpError(ErrorCode.InvalidParams, 'Missing required parameter: question_id');
+                        throw new McpError(
+                            ErrorCode.InvalidParams,
+                            'Missing required parameter: question_id'
+                        );
                     }
+
                     const question = await this.apiClient.getQuestionById(args.question_id, args);
                     return {
                         content: [{
-                                type: 'text',
-                                text: JSON.stringify(question, null, 2)
-                            }]
+                            type: 'text',
+                            text: JSON.stringify(question, null, 2)
+                        }]
                     };
                 }
+
                 case 'search_questions': {
                     if (!args.query) {
-                        throw new McpError(ErrorCode.InvalidParams, 'Missing required parameter: query');
+                        throw new McpError(
+                            ErrorCode.InvalidParams,
+                            'Missing required parameter: query'
+                        );
                     }
+
                     const questions = await this.apiClient.searchQuestions(args.query, args);
                     return {
                         content: [{
-                                type: 'text',
-                                text: JSON.stringify(questions, null, 2)
-                            }]
+                            type: 'text',
+                            text: JSON.stringify(questions, null, 2)
+                        }]
                     };
                 }
+
                 case 'advanced_search': {
                     const questions = await this.apiClient.searchAdvanced(args);
                     return {
                         content: [{
-                                type: 'text',
-                                text: JSON.stringify(questions, null, 2)
-                            }]
+                            type: 'text',
+                            text: JSON.stringify(questions, null, 2)
+                        }]
                     };
                 }
+
                 case 'find_similar_questions': {
                     if (!args.title) {
-                        throw new McpError(ErrorCode.InvalidParams, 'Missing required parameter: title');
+                        throw new McpError(
+                            ErrorCode.InvalidParams,
+                            'Missing required parameter: title'
+                        );
                     }
+
                     const similarQuestions = await this.apiClient.getSimilarQuestions(args.title, args);
                     return {
                         content: [{
-                                type: 'text',
-                                text: JSON.stringify(similarQuestions, null, 2)
-                            }]
+                            type: 'text',
+                            text: JSON.stringify(similarQuestions, null, 2)
+                        }]
                     };
                 }
+
                 case 'search_excerpts': {
                     const results = await this.apiClient.searchExcerpts(args);
                     return {
                         content: [{
-                                type: 'text',
-                                text: JSON.stringify(results, null, 2)
-                            }]
+                            type: 'text',
+                            text: JSON.stringify(results, null, 2)
+                        }]
                     };
                 }
+
                 default:
-                    throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${toolName}`);
+                    throw new McpError(
+                        ErrorCode.MethodNotFound,
+                        `Unknown tool: ${toolName}`
+                    );
             }
-        }
-        catch (error) {
+        } catch (error) {
             this.logger.error('Tool call failed', error);
             throw error;
         }

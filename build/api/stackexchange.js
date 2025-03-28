@@ -542,4 +542,195 @@ export class StackExchangeApiClient {
             throw error;
         }
     }
+    async addQuestion(question, auth, options = {}) {
+        try {
+            this.logger.info(`Adding question on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.post('/questions/add', {
+                title: question.title,
+                body: question.body,
+                tags: question.tags.join(';')
+            }, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: auth.access_token,
+                    key: auth.api_key,
+                    filter: options.filter
+                }
+            });
+            return response.data.items[0];
+        }
+        catch (error) {
+            this.logger.error('Failed to add question', error);
+            throw error;
+        }
+    }
+    async editQuestion(questionId, edit, auth, options = {}) {
+        try {
+            this.logger.info(`Editing question ${questionId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.post(`/questions/${questionId}/edit`, {
+                title: edit.title,
+                body: edit.body,
+                tags: edit.tags.join(';'),
+                comment: edit.comment
+            }, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: auth.access_token,
+                    key: auth.api_key,
+                    filter: options.filter
+                }
+            });
+            return response.data.items[0];
+        }
+        catch (error) {
+            this.logger.error('Failed to edit question', error);
+            throw error;
+        }
+    }
+    async deleteQuestion(questionId, auth, options = {}) {
+        try {
+            this.logger.info(`Deleting question ${questionId} on ${options.site || 'stackoverflow'}`);
+            await this.client.post(`/questions/${questionId}/delete`, null, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: auth.access_token,
+                    key: auth.api_key
+                }
+            });
+        }
+        catch (error) {
+            this.logger.error('Failed to delete question', error);
+            throw error;
+        }
+    }
+    async addAnswer(questionId, answer, auth, options = {}) {
+        try {
+            this.logger.info(`Adding answer to question ${questionId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.post(`/questions/${questionId}/answers/add`, {
+                body: answer.body,
+                comment: answer.comment
+            }, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: auth.access_token,
+                    key: auth.api_key,
+                    filter: options.filter
+                }
+            });
+            return response.data.items[0];
+        }
+        catch (error) {
+            this.logger.error('Failed to add answer', error);
+            throw error;
+        }
+    }
+    async deleteAnswer(answerId, auth, options = {}) {
+        try {
+            this.logger.info(`Deleting answer ${answerId} on ${options.site || 'stackoverflow'}`);
+            await this.client.post(`/answers/${answerId}/delete`, null, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: auth.access_token,
+                    key: auth.api_key
+                }
+            });
+        }
+        catch (error) {
+            this.logger.error('Failed to delete answer', error);
+            throw error;
+        }
+    }
+    async acceptAnswer(answerId, auth, options = {}) {
+        try {
+            this.logger.info(`Accepting answer ${answerId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.post(`/answers/${answerId}/accept`, null, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: auth.access_token,
+                    key: auth.api_key,
+                    filter: options.filter
+                }
+            });
+            return response.data.items[0];
+        }
+        catch (error) {
+            this.logger.error('Failed to accept answer', error);
+            throw error;
+        }
+    }
+    async undoAcceptAnswer(answerId, auth, options = {}) {
+        try {
+            this.logger.info(`Undoing accept for answer ${answerId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.post(`/answers/${answerId}/accept/undo`, null, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: auth.access_token,
+                    key: auth.api_key,
+                    filter: options.filter
+                }
+            });
+            return response.data.items[0];
+        }
+        catch (error) {
+            this.logger.error('Failed to undo accept answer', error);
+            throw error;
+        }
+    }
+    async recommendAnswer(answerId, auth, options = {}) {
+        try {
+            this.logger.info(`Recommending answer ${answerId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.post(`/answers/${answerId}/recommend`, null, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: auth.access_token,
+                    key: auth.api_key,
+                    filter: options.filter
+                }
+            });
+            return response.data.items[0];
+        }
+        catch (error) {
+            this.logger.error('Failed to recommend answer', error);
+            throw error;
+        }
+    }
+    async undoRecommendAnswer(answerId, auth, options = {}) {
+        try {
+            this.logger.info(`Undoing recommendation for answer ${answerId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.post(`/answers/${answerId}/recommend/undo`, null, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: auth.access_token,
+                    key: auth.api_key,
+                    filter: options.filter
+                }
+            });
+            return response.data.items[0];
+        }
+        catch (error) {
+            this.logger.error('Failed to undo recommend answer', error);
+            throw error;
+        }
+    }
+    async addAnswerSuggestedEdit(answerId, edit, auth, options = {}) {
+        try {
+            this.logger.info(`Adding suggested edit to answer ${answerId} on ${options.site || 'stackoverflow'}`);
+            const response = await this.client.post(`/answers/${answerId}/suggested-edit/add`, {
+                body: edit.body,
+                comment: edit.comment
+            }, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    access_token: auth.access_token,
+                    key: auth.api_key,
+                    filter: options.filter
+                }
+            });
+            return response.data.items[0];
+        }
+        catch (error) {
+            this.logger.error('Failed to add suggested edit to answer', error);
+            throw error;
+        }
+    }
 }

@@ -172,3 +172,35 @@ export interface ApiResponse<T> {
     error_id?: number;
     error_message?: string;
 }
+
+export interface AuthenticatedRequest {
+    access_token: string;
+    api_key: string;
+}
+
+export interface QuestionRequest {
+    title: string;
+    body: string;
+    tags: string[];
+}
+
+export interface QuestionEditRequest extends QuestionRequest {
+    comment?: string;
+}
+
+export interface AnswerRequest {
+    body: string;
+    comment?: string;
+}
+
+export interface AnswerAcceptResponse {
+    answer_id: number;
+    question_id: number;
+    is_accepted: boolean;
+}
+
+export interface AnswerRecommendResponse {
+    answer_id: number;
+    question_id: number;
+    recommendation_count: number;
+}

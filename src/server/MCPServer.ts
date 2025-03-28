@@ -11,7 +11,14 @@ import { StackExchangeApiClient } from '../api/stackexchange.js';
 import { Logger } from '../utils/logger.js';
 import { BaseTool } from '../tools/base-tool.js';
 import { UserTools } from '../tools/users.js';
+import { QuestionTools } from '../tools/questions.js';
+import { AnswerTools } from '../tools/answers.js';
+import { CommentTools } from '../tools/comments.js';
+import { TagTools } from '../tools/tags.js';
+import { PostTools } from '../tools/posts.js';
+import { WriteTools } from '../tools/write.js';
 import { DebugTools } from '../tools/debug.js';
+import { AuthService } from '../auth/auth-service.js';
 
 export class StackExchangeMCPServer {
     private server: Server;
@@ -24,6 +31,21 @@ export class StackExchangeMCPServer {
         console.error('[DEBUG] Initializing MCPServer');
 
         try {
+            // Initialize AuthService with config from environment variables
+            const authConfig = {
+                clientId: process.env.STACK_EXCHANGE_CLIENT_ID || '',
+                apiKey: process.env.STACK_EXCHANGE_API_KEY || '',
+                redirectUri: process.env.STACK_EXCHANGE_REDIRECT_URI || 'http://localhost:3000/oauth/callback'
+            };
+
+            if (!authConfig.clientId || !authConfig.apiKey) {
+                throw new Error('Missing required environment variables: STACK_EXCHANGE_CLIENT_ID, STACK_EXCHANGE_API_KEY');
+            }
+
+            // Initialize AuthService singleton
+            AuthService.getInstance(authConfig);
+            console.error('[DEBUG] AuthService initialized');
+
             this.apiClient = new StackExchangeApiClient(this.logger);
             console.error('[DEBUG] API client initialized');
         } catch (error) {
@@ -34,6 +56,12 @@ export class StackExchangeMCPServer {
 
         this.tools = [
             new UserTools(this.apiClient, this.logger),
+            new QuestionTools(this.apiClient, this.logger),
+            new AnswerTools(this.apiClient, this.logger),
+            new CommentTools(this.apiClient, this.logger),
+            new TagTools(this.apiClient, this.logger),
+            new PostTools(this.apiClient, this.logger),
+            new WriteTools(this.apiClient, this.logger),
             new DebugTools(this.logger)
         ];
         console.error('[DEBUG] Tools initialized');
@@ -101,74 +129,42 @@ export class StackExchangeMCPServer {
 
         // Handle tool calls
         this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-            console.error(`[DEBUG] Handling tool call: ${request.params.name}`, JSON.stringify(request, null, 2));
-            const toolName = request.params.name;
-            const args = request.params.arguments ?? {};
-
+            console.error('[DEBUG] Handling tool call:', JSON.stringify(request, null, 2));
             try {
-                // Find the tool that can handle this request
+                const toolName = request.params.name;
+                const args = request.params.arguments ?? {};
+
                 for (const tool of this.tools) {
-                    const toolDefinitions = tool.getToolDefinitions();
-                    if (toolDefinitions.some(def => def.name === toolName)) {
-                        console.error(`[DEBUG] Found handler for tool: ${toolName}`);
+                    const toolDefs = tool.getToolDefinitions();
+                    if (toolDefs.some(def => def.name === toolName)) {
                         const response = await tool.handleToolCall(toolName, args);
-                        console.error('[DEBUG] Tool response:', JSON.stringify(response, null, 2));
+                        console.error('[DEBUG] Tool call response:', JSON.stringify(response, null, 2));
                         return response;
                     }
                 }
-
-                console.error(`[ERROR] No handler found for tool: ${toolName}`);
-                throw new Error(`Tool not found: ${toolName}`);
+                throw new McpError(
+                    ErrorCode.MethodNotFound,
+                    `Tool not found: ${toolName}`
+                );
             } catch (error) {
-                console.error(`[ERROR] Tool call failed for ${toolName}:`, error instanceof Error ? error.message : 'Unknown error');
-                console.error('[ERROR] Error stack:', error instanceof Error ? error.stack : 'No stack available');
+                console.error('[ERROR] Tool call failed:', error instanceof Error ? error.message : 'Unknown error');
                 throw error;
             }
         });
-        
-        console.error('[DEBUG] Tool handlers setup complete');
     }
 
     async run() {
         try {
-            console.error('[DEBUG] Starting server run method');
+            this.logger.info('Starting server');
             const transport = new StdioServerTransport();
-            
-            // Add basic process monitoring
-            process.on('beforeExit', () => {
-                console.error('[DEBUG] Process beforeExit event triggered');
-            });
-            
-            process.on('exit', (code) => {
-                console.error(`[DEBUG] Process exit event triggered with code: ${code}`);
-            });
-
-            // Add message logging
-            const originalWrite = transport.send.bind(transport);
-            transport.send = async (message: any) => {
-                console.error('[DEBUG] Outgoing message:', JSON.stringify(message, null, 2));
-                return originalWrite(message);
-            };
-
-            process.stdin.on('data', (data: Buffer) => {
-                const message = data.toString();
-                console.error('[DEBUG] Incoming message:', message);
-            });
-            
-            console.error('[DEBUG] Attempting to connect server to transport...');
             await this.server.connect(transport);
-            console.error('[DEBUG] Server connected to transport successfully');
-            
-            this.logger.info('StackExchange MCP server running on stdio');
-            
+            this.logger.info('Server started');
+
             // Keep the process alive
             process.stdin.resume();
-            console.error('[DEBUG] Process stdin resumed to keep server alive');
-            
         } catch (error) {
-            console.error('[FATAL] Failed to start server:', error instanceof Error ? error.message : 'Unknown error');
-            console.error('[FATAL] Error stack:', error instanceof Error ? error.stack : 'No stack available');
             this.logger.error('Failed to start server', error);
+            console.error('[ERROR] Failed to start server:', error instanceof Error ? error.message : 'Unknown error');
             process.exit(1);
         }
     }

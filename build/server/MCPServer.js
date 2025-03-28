@@ -12,6 +12,7 @@ import { TagTools } from '../tools/tags.js';
 import { PostTools } from '../tools/posts.js';
 import { WriteTools } from '../tools/write.js';
 import { DebugTools } from '../tools/debug.js';
+import { AuthService } from '../auth/auth-service.js';
 export class StackExchangeMCPServer {
     server;
     logger;
@@ -21,6 +22,18 @@ export class StackExchangeMCPServer {
         this.logger = new Logger('MCPServer');
         console.error('[DEBUG] Initializing MCPServer');
         try {
+            // Initialize AuthService with config from environment variables
+            const authConfig = {
+                clientId: process.env.STACK_EXCHANGE_CLIENT_ID || '',
+                apiKey: process.env.STACK_EXCHANGE_API_KEY || '',
+                redirectUri: process.env.STACK_EXCHANGE_REDIRECT_URI || 'http://localhost:3000/oauth/callback'
+            };
+            if (!authConfig.clientId || !authConfig.apiKey) {
+                throw new Error('Missing required environment variables: STACK_EXCHANGE_CLIENT_ID, STACK_EXCHANGE_API_KEY');
+            }
+            // Initialize AuthService singleton
+            AuthService.getInstance(authConfig);
+            console.error('[DEBUG] AuthService initialized');
             this.apiClient = new StackExchangeApiClient(this.logger);
             console.error('[DEBUG] API client initialized');
         }

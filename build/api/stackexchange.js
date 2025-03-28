@@ -1,7 +1,9 @@
 // src/api/stackexchange.ts
 import axios from 'axios';
+import { AuthService } from '../auth/auth-service.js';
 export class StackExchangeApiClient {
     client;
+    authService;
     logger;
     constructor(logger) {
         this.logger = logger;
@@ -12,6 +14,8 @@ export class StackExchangeApiClient {
                 'Accept': 'application/json'
             }
         });
+        // Get AuthService instance
+        this.authService = AuthService.getInstance();
         // Add request interceptor to log request details
         this.client.interceptors.request.use((config) => {
             this.logger.debug('Making request', {
@@ -43,6 +47,16 @@ export class StackExchangeApiClient {
             }
             throw error;
         });
+    }
+    async ensureAuth(auth) {
+        if (auth?.access_token && auth?.api_key) {
+            return auth;
+        }
+        const authState = await this.authService.ensureAuthenticated();
+        return {
+            access_token: authState.accessToken,
+            api_key: this.authService.getConfig().apiKey
+        };
     }
     async getUserProfile(userId, options = {}) {
         try {
@@ -544,6 +558,7 @@ export class StackExchangeApiClient {
     }
     async addQuestion(question, auth, options = {}) {
         try {
+            auth = await this.ensureAuth(auth);
             this.logger.info(`Adding question on ${options.site || 'stackoverflow'}`);
             const response = await this.client.post('/questions/add', {
                 title: question.title,
@@ -554,7 +569,8 @@ export class StackExchangeApiClient {
                     site: options.site || 'stackoverflow',
                     access_token: auth.access_token,
                     key: auth.api_key,
-                    filter: options.filter
+                    filter: options.filter,
+                    preview: options.preview
                 }
             });
             return response.data.items[0];
@@ -566,6 +582,7 @@ export class StackExchangeApiClient {
     }
     async editQuestion(questionId, edit, auth, options = {}) {
         try {
+            auth = await this.ensureAuth(auth);
             this.logger.info(`Editing question ${questionId} on ${options.site || 'stackoverflow'}`);
             const response = await this.client.post(`/questions/${questionId}/edit`, {
                 title: edit.title,
@@ -589,6 +606,7 @@ export class StackExchangeApiClient {
     }
     async deleteQuestion(questionId, auth, options = {}) {
         try {
+            auth = await this.ensureAuth(auth);
             this.logger.info(`Deleting question ${questionId} on ${options.site || 'stackoverflow'}`);
             await this.client.post(`/questions/${questionId}/delete`, null, {
                 params: {
@@ -605,6 +623,7 @@ export class StackExchangeApiClient {
     }
     async addAnswer(questionId, answer, auth, options = {}) {
         try {
+            auth = await this.ensureAuth(auth);
             this.logger.info(`Adding answer to question ${questionId} on ${options.site || 'stackoverflow'}`);
             const response = await this.client.post(`/questions/${questionId}/answers/add`, {
                 body: answer.body,
@@ -626,6 +645,7 @@ export class StackExchangeApiClient {
     }
     async deleteAnswer(answerId, auth, options = {}) {
         try {
+            auth = await this.ensureAuth(auth);
             this.logger.info(`Deleting answer ${answerId} on ${options.site || 'stackoverflow'}`);
             await this.client.post(`/answers/${answerId}/delete`, null, {
                 params: {
@@ -642,6 +662,7 @@ export class StackExchangeApiClient {
     }
     async acceptAnswer(answerId, auth, options = {}) {
         try {
+            auth = await this.ensureAuth(auth);
             this.logger.info(`Accepting answer ${answerId} on ${options.site || 'stackoverflow'}`);
             const response = await this.client.post(`/answers/${answerId}/accept`, null, {
                 params: {
@@ -660,6 +681,7 @@ export class StackExchangeApiClient {
     }
     async undoAcceptAnswer(answerId, auth, options = {}) {
         try {
+            auth = await this.ensureAuth(auth);
             this.logger.info(`Undoing accept for answer ${answerId} on ${options.site || 'stackoverflow'}`);
             const response = await this.client.post(`/answers/${answerId}/accept/undo`, null, {
                 params: {
@@ -678,6 +700,7 @@ export class StackExchangeApiClient {
     }
     async recommendAnswer(answerId, auth, options = {}) {
         try {
+            auth = await this.ensureAuth(auth);
             this.logger.info(`Recommending answer ${answerId} on ${options.site || 'stackoverflow'}`);
             const response = await this.client.post(`/answers/${answerId}/recommend`, null, {
                 params: {
@@ -696,6 +719,7 @@ export class StackExchangeApiClient {
     }
     async undoRecommendAnswer(answerId, auth, options = {}) {
         try {
+            auth = await this.ensureAuth(auth);
             this.logger.info(`Undoing recommendation for answer ${answerId} on ${options.site || 'stackoverflow'}`);
             const response = await this.client.post(`/answers/${answerId}/recommend/undo`, null, {
                 params: {
@@ -714,6 +738,7 @@ export class StackExchangeApiClient {
     }
     async addAnswerSuggestedEdit(answerId, edit, auth, options = {}) {
         try {
+            auth = await this.ensureAuth(auth);
             this.logger.info(`Adding suggested edit to answer ${answerId} on ${options.site || 'stackoverflow'}`);
             const response = await this.client.post(`/answers/${answerId}/suggested-edit/add`, {
                 body: edit.body,

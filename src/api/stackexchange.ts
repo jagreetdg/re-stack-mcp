@@ -24,11 +24,9 @@ import {
     AuthenticatedRequest
 } from './interfaces.js';
 import { Logger } from '../utils/logger.js';
-import { AuthService } from '../auth/auth-service.js';
 
 export class StackExchangeApiClient {
     private client: AxiosInstance;
-    private authService: AuthService;
     private logger: Logger;
 
     constructor(logger: Logger) {
@@ -40,9 +38,6 @@ export class StackExchangeApiClient {
                 'Accept': 'application/json'
             }
         });
-
-        // Get AuthService instance
-        this.authService = AuthService.getInstance();
 
         // Add request interceptor to log request details
         this.client.interceptors.request.use((config) => {
@@ -79,18 +74,6 @@ export class StackExchangeApiClient {
                 throw error;
             }
         );
-    }
-
-    private async ensureAuth(auth?: AuthenticatedRequest): Promise<AuthenticatedRequest> {
-        if (auth?.access_token && auth?.api_key) {
-            return auth;
-        }
-
-        const authState = await this.authService.ensureAuthenticated();
-        return {
-            access_token: authState.accessToken!,
-            api_key: this.authService.getConfig().apiKey
-        };
     }
 
     async getUserProfile(
@@ -656,7 +639,6 @@ export class StackExchangeApiClient {
         options: StackExchangeApiOptions = {}
     ): Promise<QuestionResponse> {
         try {
-            auth = await this.ensureAuth(auth);
             this.logger.info(`Adding question on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<QuestionResponse>>('/questions/add', {
@@ -668,8 +650,7 @@ export class StackExchangeApiClient {
                     site: options.site || 'stackoverflow',
                     access_token: auth.access_token,
                     key: auth.api_key,
-                    filter: options.filter,
-                    preview: options.preview
+                    filter: options.filter
                 }
             });
 
@@ -687,7 +668,6 @@ export class StackExchangeApiClient {
         options: StackExchangeApiOptions = {}
     ): Promise<QuestionResponse> {
         try {
-            auth = await this.ensureAuth(auth);
             this.logger.info(`Editing question ${questionId} on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<QuestionResponse>>(`/questions/${questionId}/edit`, {
@@ -717,7 +697,6 @@ export class StackExchangeApiClient {
         options: StackExchangeApiOptions = {}
     ): Promise<void> {
         try {
-            auth = await this.ensureAuth(auth);
             this.logger.info(`Deleting question ${questionId} on ${options.site || 'stackoverflow'}`);
 
             await this.client.post<ApiResponse<void>>(`/questions/${questionId}/delete`, null, {
@@ -740,7 +719,6 @@ export class StackExchangeApiClient {
         options: StackExchangeApiOptions = {}
     ): Promise<AnswerResponse> {
         try {
-            auth = await this.ensureAuth(auth);
             this.logger.info(`Adding answer to question ${questionId} on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<AnswerResponse>>(`/questions/${questionId}/answers/add`, {
@@ -768,7 +746,6 @@ export class StackExchangeApiClient {
         options: StackExchangeApiOptions = {}
     ): Promise<void> {
         try {
-            auth = await this.ensureAuth(auth);
             this.logger.info(`Deleting answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
             await this.client.post<ApiResponse<void>>(`/answers/${answerId}/delete`, null, {
@@ -790,7 +767,6 @@ export class StackExchangeApiClient {
         options: StackExchangeApiOptions = {}
     ): Promise<AnswerAcceptResponse> {
         try {
-            auth = await this.ensureAuth(auth);
             this.logger.info(`Accepting answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<AnswerAcceptResponse>>(`/answers/${answerId}/accept`, null, {
@@ -815,7 +791,6 @@ export class StackExchangeApiClient {
         options: StackExchangeApiOptions = {}
     ): Promise<AnswerAcceptResponse> {
         try {
-            auth = await this.ensureAuth(auth);
             this.logger.info(`Undoing accept for answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<AnswerAcceptResponse>>(`/answers/${answerId}/accept/undo`, null, {
@@ -840,7 +815,6 @@ export class StackExchangeApiClient {
         options: StackExchangeApiOptions = {}
     ): Promise<AnswerRecommendResponse> {
         try {
-            auth = await this.ensureAuth(auth);
             this.logger.info(`Recommending answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<AnswerRecommendResponse>>(`/answers/${answerId}/recommend`, null, {
@@ -865,7 +839,6 @@ export class StackExchangeApiClient {
         options: StackExchangeApiOptions = {}
     ): Promise<AnswerRecommendResponse> {
         try {
-            auth = await this.ensureAuth(auth);
             this.logger.info(`Undoing recommendation for answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<AnswerRecommendResponse>>(`/answers/${answerId}/recommend/undo`, null, {
@@ -891,7 +864,6 @@ export class StackExchangeApiClient {
         options: StackExchangeApiOptions = {}
     ): Promise<SuggestedEdit> {
         try {
-            auth = await this.ensureAuth(auth);
             this.logger.info(`Adding suggested edit to answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<SuggestedEdit>>(`/answers/${answerId}/suggested-edit/add`, {

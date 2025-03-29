@@ -11,7 +11,6 @@ export interface StackExchangeApiOptions {
     min?: number;
     max?: number;
     tagged?: string;
-    preview?: boolean;  // For write operations, to preview without actually posting
 }
 
 export interface AdvancedSearchOptions extends StackExchangeApiOptions {

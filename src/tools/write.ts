@@ -1,17 +1,17 @@
 // src/tools/write.ts
-import { BaseTool, ToolDefinition } from './base-tool.js';
+import { AuthBaseTool } from './auth-base-tool.js';
 import { StackExchangeApiClient } from '../api/stackexchange.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { Logger } from '../utils/logger.js';
+import { AuthService } from '../auth/auth-service.js';
+import { ToolDefinition } from './base-tool.js';
 
-export class WriteTools extends BaseTool {
+export class WriteTools extends AuthBaseTool {
     private apiClient: StackExchangeApiClient;
-    private logger: Logger;
 
-    constructor(apiClient: StackExchangeApiClient, logger: Logger) {
-        super();
+    constructor(apiClient: StackExchangeApiClient, authService: AuthService, logger: Logger) {
+        super(authService, logger);
         this.apiClient = apiClient;
-        this.logger = logger;
     }
 
     getToolDefinitions(): ToolDefinition[] {
@@ -34,14 +34,6 @@ export class WriteTools extends BaseTool {
                             type: 'array',
                             items: { type: 'string' },
                             description: 'Question tags'
-                        },
-                        access_token: {
-                            type: 'string',
-                            description: 'OAuth access token'
-                        },
-                        api_key: {
-                            type: 'string',
-                            description: 'Stack Exchange API key'
                         },
                         site: {
                             type: 'string',
@@ -79,14 +71,6 @@ export class WriteTools extends BaseTool {
                             type: 'string',
                             description: 'Edit comment'
                         },
-                        access_token: {
-                            type: 'string',
-                            description: 'OAuth access token'
-                        },
-                        api_key: {
-                            type: 'string',
-                            description: 'Stack Exchange API key'
-                        },
                         site: {
                             type: 'string',
                             description: 'Stack Exchange site',
@@ -105,14 +89,6 @@ export class WriteTools extends BaseTool {
                         question_id: {
                             type: 'number',
                             description: 'Question ID'
-                        },
-                        access_token: {
-                            type: 'string',
-                            description: 'OAuth access token'
-                        },
-                        api_key: {
-                            type: 'string',
-                            description: 'Stack Exchange API key'
                         },
                         site: {
                             type: 'string',
@@ -141,14 +117,6 @@ export class WriteTools extends BaseTool {
                             type: 'string',
                             description: 'Optional comment'
                         },
-                        access_token: {
-                            type: 'string',
-                            description: 'OAuth access token'
-                        },
-                        api_key: {
-                            type: 'string',
-                            description: 'Stack Exchange API key'
-                        },
                         site: {
                             type: 'string',
                             description: 'Stack Exchange site',
@@ -167,14 +135,6 @@ export class WriteTools extends BaseTool {
                         answer_id: {
                             type: 'number',
                             description: 'Answer ID'
-                        },
-                        access_token: {
-                            type: 'string',
-                            description: 'OAuth access token'
-                        },
-                        api_key: {
-                            type: 'string',
-                            description: 'Stack Exchange API key'
                         },
                         site: {
                             type: 'string',
@@ -195,14 +155,6 @@ export class WriteTools extends BaseTool {
                             type: 'number',
                             description: 'Answer ID'
                         },
-                        access_token: {
-                            type: 'string',
-                            description: 'OAuth access token'
-                        },
-                        api_key: {
-                            type: 'string',
-                            description: 'Stack Exchange API key'
-                        },
                         site: {
                             type: 'string',
                             description: 'Stack Exchange site',
@@ -221,14 +173,6 @@ export class WriteTools extends BaseTool {
                         answer_id: {
                             type: 'number',
                             description: 'Answer ID'
-                        },
-                        access_token: {
-                            type: 'string',
-                            description: 'OAuth access token'
-                        },
-                        api_key: {
-                            type: 'string',
-                            description: 'Stack Exchange API key'
                         },
                         site: {
                             type: 'string',
@@ -249,14 +193,6 @@ export class WriteTools extends BaseTool {
                             type: 'number',
                             description: 'Answer ID'
                         },
-                        access_token: {
-                            type: 'string',
-                            description: 'OAuth access token'
-                        },
-                        api_key: {
-                            type: 'string',
-                            description: 'Stack Exchange API key'
-                        },
                         site: {
                             type: 'string',
                             description: 'Stack Exchange site',
@@ -275,14 +211,6 @@ export class WriteTools extends BaseTool {
                         answer_id: {
                             type: 'number',
                             description: 'Answer ID'
-                        },
-                        access_token: {
-                            type: 'string',
-                            description: 'OAuth access token'
-                        },
-                        api_key: {
-                            type: 'string',
-                            description: 'Stack Exchange API key'
                         },
                         site: {
                             type: 'string',
@@ -311,14 +239,6 @@ export class WriteTools extends BaseTool {
                             type: 'string',
                             description: 'Edit comment'
                         },
-                        access_token: {
-                            type: 'string',
-                            description: 'OAuth access token'
-                        },
-                        api_key: {
-                            type: 'string',
-                            description: 'Stack Exchange API key'
-                        },
                         site: {
                             type: 'string',
                             description: 'Stack Exchange site',
@@ -331,16 +251,16 @@ export class WriteTools extends BaseTool {
         ];
     }
 
-    async handleToolCall(
+    protected async handleAuthenticatedToolCall(
         toolName: string,
         args: Record<string, any>
     ): Promise<{ content: any[] }> {
         try {
+            const options = { site: args.site };
             const auth = {
                 access_token: args.access_token,
                 api_key: args.api_key
             };
-            const options = { site: args.site };
 
             switch (toolName) {
                 case 'add_question': {

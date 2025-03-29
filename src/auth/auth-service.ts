@@ -4,11 +4,23 @@ import session from 'express-session';
 import passport from 'passport';
 import { Strategy as StackExchangeStrategy, Profile as StackExchangeProfile } from 'passport-stackexchange';
 import { Logger } from '../utils/logger.js';
+import * as dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Get the directory path of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from the root directory
+const envPath = join(dirname(dirname(__dirname)), '.env');
+dotenv.config({ path: envPath });
 
 export interface AuthConfig {
     clientId: string;
     apiKey: string;
     redirectUri: string;
+    scope: string;
 }
 
 export interface AuthState {
@@ -28,87 +40,77 @@ export class AuthService {
     private constructor(config: AuthConfig) {
         this.logger = new Logger('AuthService');
         this.config = config;
+
+        // Debug log the environment variables
+        console.error('[DEBUG] Environment variables:', {
+            clientId: process.env.STACKEXCHANGE_CLIENT_ID,
+            redirectUri: process.env.STACKEXCHANGE_REDIRECT_URI
+        });
+        
+        // Validate config
+        if (!this.config.clientId) {
+            this.logger.error('Missing STACKEXCHANGE_CLIENT_ID environment variable');
+            throw new Error('Missing STACKEXCHANGE_CLIENT_ID environment variable');
+        }
+        if (!this.config.apiKey) {
+            this.logger.error('Missing STACKEXCHANGE_API_KEY environment variable');
+            throw new Error('Missing STACKEXCHANGE_API_KEY environment variable');
+        }
+        if (!this.config.redirectUri) {
+            this.logger.error('Missing STACKEXCHANGE_REDIRECT_URI environment variable');
+            throw new Error('Missing STACKEXCHANGE_REDIRECT_URI environment variable');
+        }
+        if (!this.config.scope) {
+            this.logger.error('Missing STACKEXCHANGE_SCOPE environment variable');
+            throw new Error('Missing STACKEXCHANGE_SCOPE environment variable');
+        }
+
+        this.logger.info('Auth service initialized with config:', {
+            clientId: this.config.clientId,
+            redirectUri: this.config.redirectUri
+        });
+
         this.setupExpressApp();
     }
 
     static getInstance(config?: AuthConfig): AuthService {
         if (!AuthService.instance) {
             if (!config) {
-                throw new Error('AuthService must be initialized with config first');
+                // Try to load from environment variables
+                const envConfig = {
+                    clientId: process.env.STACKEXCHANGE_CLIENT_ID || '',
+                    apiKey: process.env.STACKEXCHANGE_API_KEY || '',
+                    redirectUri: process.env.STACKEXCHANGE_REDIRECT_URI || 'http://localhost:3000/oauth/callback',
+                    scope: process.env.STACKEXCHANGE_SCOPE || 'write_access private_info'
+                };
+                AuthService.instance = new AuthService(envConfig);
+            } else {
+                AuthService.instance = new AuthService(config);
             }
-            AuthService.instance = new AuthService(config);
         }
         return AuthService.instance;
     }
 
     private setupExpressApp() {
-        this.app = express();
-
-        // Session middleware
-        this.app.use(session({
-            secret: 'stack-exchange-mcp-secret',
-            resave: false,
-            saveUninitialized: false
-        }));
-
-        // Passport setup
-        this.app.use(passport.initialize());
-        this.app.use(passport.session());
-
-        passport.use(new StackExchangeStrategy({
-            clientID: this.config.clientId,
-            clientSecret: '', // Not needed for implicit flow
-            callbackURL: this.config.redirectUri,
-            key: this.config.apiKey, // This is the Stack Exchange API key
-            site: 'stackoverflow'
-        }, (accessToken: string, refreshToken: string, profile: StackExchangeProfile, done: (error: any, user?: any) => void) => {
-            // Store the access token
-            this.authState.accessToken = accessToken;
-            // Set expiry to 24 hours from now if not provided
-            this.authState.expiresAt = Date.now() + 24 * 60 * 60 * 1000;
-            
-            if (this.resolveAuth) {
-                this.resolveAuth();
-            }
-            
-            done(null, { id: profile.id, displayName: profile.displayName });
-        }));
-
-        passport.serializeUser((user: Express.User, done) => done(null, user));
-        passport.deserializeUser((user: Express.User, done) => done(null, user));
-
-        // Auth routes
-        this.app.get('/oauth/login', passport.authenticate('stackexchange'));
-
-        this.app.get('/oauth/callback',
-            passport.authenticate('stackexchange', { session: false }),
-            (req, res) => {
-                res.send('<script>window.close();</script>');
-            }
-        );
+        // Desktop OAuth flow doesn't need an express app
+        this.logger.info('Using desktop OAuth flow');
     }
 
     async startAuthServer(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const server = this.app.listen(3000, () => {
-                this.logger.info('Auth server started on port 3000');
-                resolve();
-            });
-            server.on('error', (error) => {
-                this.logger.error('Failed to start auth server', error);
-                reject(error);
-            });
-        });
+        // No server needed for desktop OAuth flow
+        return Promise.resolve();
     }
 
     async ensureAuthenticated(): Promise<AuthState> {
         // If we have a valid access token, return it
         if (this.authState.accessToken && this.authState.expiresAt && this.authState.expiresAt > Date.now()) {
+            this.logger.info('Using cached access token');
             return this.authState;
         }
 
         // If authentication is already in progress, wait for it
         if (this.authPromise) {
+            this.logger.info('Waiting for in-progress authentication');
             await this.authPromise;
             return this.authState;
         }
@@ -118,18 +120,19 @@ export class AuthService {
             this.resolveAuth = resolve;
         });
 
-        // Start the auth server if not already running
-        await this.startAuthServer();
-
         // Open the OAuth dialog
-        const authUrl = `https://stackoverflow.com/oauth/dialog?client_id=${this.config.clientId}&redirect_uri=${encodeURIComponent(this.config.redirectUri)}&scope=write_access private_info`;
+        const encodedScope = this.config.scope.replace(/ /g, '%20');
+        const authUrl = `https://stackoverflow.com/oauth/dialog?client_id=${this.config.clientId}&redirect_uri=${encodeURIComponent(this.config.redirectUri)}&scope=${encodedScope}`;
         this.logger.info('Opening auth URL:', authUrl);
         
-        // In a real browser environment, we would use window.open()
-        // For now, we'll just log the URL and ask the user to open it
         console.log('\nAuthentication required!');
         console.log('Please open this URL in your browser to authenticate:');
         console.log(authUrl);
+        console.log('\nAfter authentication, you will be redirected to a success page.');
+        console.log('Copy the access_token from the URL and paste it here:');
+
+        // TODO: Implement reading the access token from user input
+        // For now, we'll need to manually extract it from the URL
 
         // Wait for authentication to complete
         await this.authPromise;

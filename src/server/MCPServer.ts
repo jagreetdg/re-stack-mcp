@@ -31,21 +31,6 @@ export class StackExchangeMCPServer {
         console.error('[DEBUG] Initializing MCPServer');
 
         try {
-            // Initialize AuthService with config from environment variables
-            const authConfig = {
-                clientId: process.env.STACK_EXCHANGE_CLIENT_ID || '',
-                apiKey: process.env.STACK_EXCHANGE_API_KEY || '',
-                redirectUri: process.env.STACK_EXCHANGE_REDIRECT_URI || 'http://localhost:3000/oauth/callback'
-            };
-
-            if (!authConfig.clientId || !authConfig.apiKey) {
-                throw new Error('Missing required environment variables: STACK_EXCHANGE_CLIENT_ID, STACK_EXCHANGE_API_KEY');
-            }
-
-            // Initialize AuthService singleton
-            AuthService.getInstance(authConfig);
-            console.error('[DEBUG] AuthService initialized');
-
             this.apiClient = new StackExchangeApiClient(this.logger);
             console.error('[DEBUG] API client initialized');
         } catch (error) {
@@ -54,6 +39,16 @@ export class StackExchangeMCPServer {
             process.exit(1);
         }
 
+        // Initialize auth service
+        const authConfig = {
+            clientId: process.env.STACKEXCHANGE_CLIENT_ID || '',
+            apiKey: process.env.STACKEXCHANGE_API_KEY || '',
+            redirectUri: process.env.STACKEXCHANGE_REDIRECT_URI || 'http://localhost:3000/oauth/callback',
+            scope: process.env.STACKEXCHANGE_SCOPE || 'write_access private_info'
+        };
+
+        const authService = AuthService.getInstance(authConfig);
+
         this.tools = [
             new UserTools(this.apiClient, this.logger),
             new QuestionTools(this.apiClient, this.logger),
@@ -61,7 +56,7 @@ export class StackExchangeMCPServer {
             new CommentTools(this.apiClient, this.logger),
             new TagTools(this.apiClient, this.logger),
             new PostTools(this.apiClient, this.logger),
-            new WriteTools(this.apiClient, this.logger),
+            new WriteTools(this.apiClient, authService, this.logger),
             new DebugTools(this.logger)
         ];
         console.error('[DEBUG] Tools initialized');

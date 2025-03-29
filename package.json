@@ -1,11 +1,11 @@
 {
-    "name": "stackexchange-mcp-server",
+    "name": "re-stack-mcp",
     "version": "0.1.0",
-    "description": "StackExchange MCP Server for accessing StackExchange API through Model Context Protocol",
+    "description": "Re-Stack MCP Server - Bridging Stack Overflow & LLMs through Model Context Protocol",
     "main": "build/index.js",
     "type": "module",
     "bin": {
-        "stackexchange-mcp-server": "build/index.js"
+        "re-stack-mcp": "build/index.js"
     },
     "scripts": {
         "start": "node build/index.js",

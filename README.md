@@ -112,7 +112,7 @@ This project is licensed under the **MIT License**.
 ## **Contact & Feedback**
 For discussions, issues, or feature requests:
 - **GitHub Issues**: [https://github.com/jagreetdg/re-stack-mcp/issues](https://github.com/jagreetdg/re-stack-mcp/issues)
-- **StackApps Post**: (Add link once posted)
+- **StackApps Post**: [Re-Stack MCP Server – Integrating Stack Overflow into LLM-Based Coding](https://stackapps.com/questions/10777/re-stack-mcp-server-integrating-stack-overflow-into-llm-based-coding)
 
 ---
 **🔗 GitHub:** [https://github.com/jagreetdg/re-stack-mcp](https://github.com/jagreetdg/re-stack-mcp)  

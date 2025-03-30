@@ -43,8 +43,8 @@ export class StackExchangeMCPServer {
         const authConfig = {
             clientId: process.env.STACKEXCHANGE_CLIENT_ID || '',
             apiKey: process.env.STACKEXCHANGE_API_KEY || '',
-            redirectUri: process.env.STACKEXCHANGE_REDIRECT_URI || 'http://localhost:3000/oauth/callback',
-            scope: process.env.STACKEXCHANGE_SCOPE || 'write_access private_info'
+            redirectUri: process.env.STACKEXCHANGE_REDIRECT_URI || 'https://stackexchange.com/oauth/login_success',
+            scope: process.env.STACKEXCHANGE_SCOPE || 'write_access no_expiry'
         };
 
         const authService = AuthService.getInstance(authConfig);

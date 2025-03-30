@@ -1,7 +1,7 @@
 # 🚀 Re-Stack MCP Server – Bridging Stack Overflow & LLMs
 
 ## **Introduction**
-**Re-Stack MCP Server** is a middleware communication protocol (MCP) server designed to integrate **Stack Overflow** into **LLM-based coding workflows** (Cursor, Windsurf, GPT, Claude, etc.) using the **Stack Exchange API**. It ensures developers have real-time access to the latest solutions while restoring Stack Overflow's crucial **feedback loop**.
+**Re-Stack MCP Server** is a model communication protocol (MCP) server designed to integrate **Stack Overflow** into **LLM-based coding workflows** (Cursor, Windsurf, GPT, Claude, etc.) using the **Stack Exchange API**. It ensures developers have real-time access to the latest solutions while restoring Stack Overflow's crucial **feedback loop**.
 
 ## **Why This Matters?**
 ### 🔥 The Problem

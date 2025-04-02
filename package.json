@@ -33,6 +33,7 @@
         "dotenv": "^16.4.7",
         "express": "^5.0.1",
         "express-session": "^1.18.1",
+        "open": "^10.1.0",
         "passport": "^0.7.0",
         "passport-stackexchange": "^0.1.2",
         "xml2js": "^0.6.2"

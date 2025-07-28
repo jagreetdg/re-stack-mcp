@@ -1,17 +1,11 @@
 // src/tools/posts.ts
-import { BaseTool, ToolDefinition } from './base-tool.js';
-import { StackExchangeApiClient } from '../api/stackexchange.js';
+import { AuthBaseTool } from './auth-base-tool.js';
+import { ToolDefinition } from './base-tool.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { Logger } from '../utils/logger.js';
 
-export class PostTools extends BaseTool {
-    private apiClient: StackExchangeApiClient;
-    private logger: Logger;
-
-    constructor(apiClient: StackExchangeApiClient, logger: Logger) {
-        super();
-        this.apiClient = apiClient;
-        this.logger = logger;
+export class PostTools extends AuthBaseTool {
+    constructor(...args: ConstructorParameters<typeof AuthBaseTool>) {
+        super(...args);
     }
 
     getToolDefinitions(): ToolDefinition[] {
@@ -124,14 +118,6 @@ export class PostTools extends BaseTool {
                         body: {
                             type: 'string',
                             description: 'Comment text'
-                        },
-                        access_token: {
-                            type: 'string',
-                            description: 'OAuth access token'
-                        },
-                        api_key: {
-                            type: 'string',
-                            description: 'Stack Exchange API key'
                         },
                         preview: {
                             type: 'boolean',
@@ -291,7 +277,7 @@ export class PostTools extends BaseTool {
         ];
     }
 
-    async handleToolCall(
+    protected async handleAuthenticatedToolCall(
         toolName: string,
         args: Record<string, any>
     ): Promise<{ content: any[] }> {
@@ -342,18 +328,16 @@ export class PostTools extends BaseTool {
                 }
 
                 case 'add_comment': {
-                    if (!args.post_id || !args.body || !args.access_token || !args.api_key) {
+                    if (!args.post_id || !args.body) {
                         throw new McpError(
                             ErrorCode.InvalidParams,
-                            'Missing required parameters: post_id, body, access_token, api_key'
+                            'Missing required parameters: post_id, body'
                         );
                     }
 
                     const comment = await this.apiClient.addComment(
                         args.post_id,
                         { body: args.body, preview: args.preview },
-                        args.access_token,
-                        args.api_key,
                         args
                     );
                     return {

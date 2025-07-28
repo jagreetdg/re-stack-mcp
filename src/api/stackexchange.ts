@@ -28,9 +28,12 @@ import { Logger } from '../utils/logger.js';
 export class StackExchangeApiClient {
     private client: AxiosInstance;
     private logger: Logger;
+    protected quota_remaining: number;
+    private auth: AuthenticatedRequest | null = null;
 
     constructor(logger: Logger) {
         this.logger = logger;
+        this.quota_remaining = 300;
         this.client = axios.create({
             baseURL: 'https://api.stackexchange.com/2.3',
             timeout: 10000,
@@ -41,6 +44,11 @@ export class StackExchangeApiClient {
 
         // Add request interceptor to log request details
         this.client.interceptors.request.use((config) => {
+            // add the authentication (even for GET request)
+            // **if** setAuth() has been called with a non-null auth
+            // before handleAuthenticatedToolCall() runs
+            // @see auth-base-tool.ts's handleToolCal()
+            config.params = {...config.params, ...this.auth},
             this.logger.debug('Making request', {
                 method: config.method,
                 url: config.url,
@@ -59,6 +67,10 @@ export class StackExchangeApiClient {
                     headers: response.headers,
                     data: response.data
                 });
+
+                if (response.data?.quota_remaining) {
+                    this.quota_remaining = response.data.quota_remaining;
+                }
                 return response;
             },
             (error) => {
@@ -74,6 +86,10 @@ export class StackExchangeApiClient {
                 throw error;
             }
         );
+    }
+
+    setAuth(auth: AuthenticatedRequest | null) {
+        this.auth = auth;
     }
 
     async getUserProfile(
@@ -510,7 +526,11 @@ export class StackExchangeApiClient {
         }
     }
 
-    async addComment(postId: number, comment: CommentRequest, accessToken: string, apiKey: string, options: StackExchangeApiOptions = {}): Promise<CommentResponse> {
+    async addComment(postId: number, comment: CommentRequest, options: StackExchangeApiOptions = {}): Promise<CommentResponse> {
+        if (!this.auth) {
+            throw new Error('Authentication required for addComment');
+        }
+
         try {
             this.logger.info(`Adding comment to post ${postId} on ${options.site || 'stackoverflow'}`);
 
@@ -519,10 +539,9 @@ export class StackExchangeApiClient {
             }, {
                 params: {
                     site: options.site || 'stackoverflow',
-                    access_token: accessToken,
-                    key: apiKey,
                     filter: options.filter,
-                    preview: comment.preview
+                    preview: comment.preview,
+                    ...this.auth
                 }
             });
 
@@ -635,9 +654,12 @@ export class StackExchangeApiClient {
 
     async addQuestion(
         question: QuestionRequest,
-        auth: AuthenticatedRequest,
         options: StackExchangeApiOptions = {}
     ): Promise<QuestionResponse> {
+        if (!this.auth) {
+            throw new Error('Authentication required for addQuestion');
+        }
+
         try {
             this.logger.info(`Adding question on ${options.site || 'stackoverflow'}`);
 
@@ -648,9 +670,8 @@ export class StackExchangeApiClient {
             }, {
                 params: {
                     site: options.site || 'stackoverflow',
-                    access_token: auth.access_token,
-                    key: auth.api_key,
-                    filter: options.filter
+                    filter: options.filter,
+                    ...this.auth
                 }
             });
 
@@ -664,9 +685,12 @@ export class StackExchangeApiClient {
     async editQuestion(
         questionId: number,
         edit: QuestionEditRequest,
-        auth: AuthenticatedRequest,
         options: StackExchangeApiOptions = {}
     ): Promise<QuestionResponse> {
+        if (!this.auth) {
+            throw new Error('Authentication required for editQuestion');
+        }
+
         try {
             this.logger.info(`Editing question ${questionId} on ${options.site || 'stackoverflow'}`);
 
@@ -678,9 +702,8 @@ export class StackExchangeApiClient {
             }, {
                 params: {
                     site: options.site || 'stackoverflow',
-                    access_token: auth.access_token,
-                    key: auth.api_key,
-                    filter: options.filter
+                    filter: options.filter,
+                    ...this.auth
                 }
             });
 
@@ -693,17 +716,19 @@ export class StackExchangeApiClient {
 
     async deleteQuestion(
         questionId: number,
-        auth: AuthenticatedRequest,
         options: StackExchangeApiOptions = {}
     ): Promise<void> {
+        if (!this.auth) {
+            throw new Error('Authentication required for deleteQuestion');
+        }
+
         try {
             this.logger.info(`Deleting question ${questionId} on ${options.site || 'stackoverflow'}`);
 
             await this.client.post<ApiResponse<void>>(`/questions/${questionId}/delete`, null, {
                 params: {
                     site: options.site || 'stackoverflow',
-                    access_token: auth.access_token,
-                    key: auth.api_key
+                    ...this.auth
                 }
             });
         } catch (error) {
@@ -715,9 +740,12 @@ export class StackExchangeApiClient {
     async addAnswer(
         questionId: number,
         answer: AnswerRequest,
-        auth: AuthenticatedRequest,
         options: StackExchangeApiOptions = {}
     ): Promise<AnswerResponse> {
+        if (!this.auth) {
+            throw new Error('Authentication required for addAnswer');
+        }
+
         try {
             this.logger.info(`Adding answer to question ${questionId} on ${options.site || 'stackoverflow'}`);
 
@@ -727,9 +755,8 @@ export class StackExchangeApiClient {
             }, {
                 params: {
                     site: options.site || 'stackoverflow',
-                    access_token: auth.access_token,
-                    key: auth.api_key,
-                    filter: options.filter
+                    filter: options.filter,
+                    ...this.auth
                 }
             });
 
@@ -742,17 +769,19 @@ export class StackExchangeApiClient {
 
     async deleteAnswer(
         answerId: number,
-        auth: AuthenticatedRequest,
         options: StackExchangeApiOptions = {}
     ): Promise<void> {
+        if (!this.auth) {
+            throw new Error('Authentication required for deleteAnswer');
+        }
+
         try {
             this.logger.info(`Deleting answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
             await this.client.post<ApiResponse<void>>(`/answers/${answerId}/delete`, null, {
                 params: {
                     site: options.site || 'stackoverflow',
-                    access_token: auth.access_token,
-                    key: auth.api_key
+                    ...this.auth
                 }
             });
         } catch (error) {
@@ -763,18 +792,20 @@ export class StackExchangeApiClient {
 
     async acceptAnswer(
         answerId: number,
-        auth: AuthenticatedRequest,
         options: StackExchangeApiOptions = {}
     ): Promise<AnswerAcceptResponse> {
+        if (!this.auth) {
+            throw new Error('Authentication required for acceptAnswer');
+        }
+
         try {
             this.logger.info(`Accepting answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<AnswerAcceptResponse>>(`/answers/${answerId}/accept`, null, {
                 params: {
                     site: options.site || 'stackoverflow',
-                    access_token: auth.access_token,
-                    key: auth.api_key,
-                    filter: options.filter
+                    filter: options.filter,
+                    ...this.auth
                 }
             });
 
@@ -787,18 +818,20 @@ export class StackExchangeApiClient {
 
     async undoAcceptAnswer(
         answerId: number,
-        auth: AuthenticatedRequest,
         options: StackExchangeApiOptions = {}
     ): Promise<AnswerAcceptResponse> {
+        if (!this.auth) {
+            throw new Error('Authentication required for undoAcceptAnswer');
+        }
+
         try {
             this.logger.info(`Undoing accept for answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<AnswerAcceptResponse>>(`/answers/${answerId}/accept/undo`, null, {
                 params: {
                     site: options.site || 'stackoverflow',
-                    access_token: auth.access_token,
-                    key: auth.api_key,
-                    filter: options.filter
+                    filter: options.filter,
+                    ...this.auth
                 }
             });
 
@@ -811,18 +844,20 @@ export class StackExchangeApiClient {
 
     async recommendAnswer(
         answerId: number,
-        auth: AuthenticatedRequest,
         options: StackExchangeApiOptions = {}
     ): Promise<AnswerRecommendResponse> {
+        if (!this.auth) {
+            throw new Error('Authentication required for recommendAnswer');
+        }
+
         try {
             this.logger.info(`Recommending answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<AnswerRecommendResponse>>(`/answers/${answerId}/recommend`, null, {
                 params: {
                     site: options.site || 'stackoverflow',
-                    access_token: auth.access_token,
-                    key: auth.api_key,
-                    filter: options.filter
+                    filter: options.filter,
+                    ...this.auth
                 }
             });
 
@@ -835,18 +870,20 @@ export class StackExchangeApiClient {
 
     async undoRecommendAnswer(
         answerId: number,
-        auth: AuthenticatedRequest,
         options: StackExchangeApiOptions = {}
     ): Promise<AnswerRecommendResponse> {
+        if (!this.auth) {
+            throw new Error('Authentication required for undoRecommendAnswer');
+        }
+
         try {
             this.logger.info(`Undoing recommendation for answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
             const response = await this.client.post<ApiResponse<AnswerRecommendResponse>>(`/answers/${answerId}/recommend/undo`, null, {
                 params: {
                     site: options.site || 'stackoverflow',
-                    access_token: auth.access_token,
-                    key: auth.api_key,
-                    filter: options.filter
+                    filter: options.filter,
+                    ...this.auth
                 }
             });
 
@@ -860,9 +897,12 @@ export class StackExchangeApiClient {
     async addAnswerSuggestedEdit(
         answerId: number,
         edit: AnswerRequest,
-        auth: AuthenticatedRequest,
         options: StackExchangeApiOptions = {}
     ): Promise<SuggestedEdit> {
+        if (!this.auth) {
+            throw new Error('Authentication required for addAnswerSuggestedEdit');
+        }
+
         try {
             this.logger.info(`Adding suggested edit to answer ${answerId} on ${options.site || 'stackoverflow'}`);
 
@@ -872,9 +912,8 @@ export class StackExchangeApiClient {
             }, {
                 params: {
                     site: options.site || 'stackoverflow',
-                    access_token: auth.access_token,
-                    key: auth.api_key,
-                    filter: options.filter
+                    filter: options.filter,
+                    ...this.auth
                 }
             });
 
@@ -883,5 +922,10 @@ export class StackExchangeApiClient {
             this.logger.error('Failed to add suggested edit to answer', error);
             throw error;
         }
+    }
+
+    public getQuota(): number
+    {
+        return this.quota_remaining;
     }
 }

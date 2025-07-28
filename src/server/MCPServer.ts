@@ -10,6 +10,7 @@ import {
 import { StackExchangeApiClient } from '../api/stackexchange.js';
 import { Logger } from '../utils/logger.js';
 import { BaseTool } from '../tools/base-tool.js';
+import { AuthBaseTool } from '../tools/auth-base-tool.js';
 import { UserTools } from '../tools/users.js';
 import { QuestionTools } from '../tools/questions.js';
 import { AnswerTools } from '../tools/answers.js';
@@ -48,15 +49,15 @@ export class StackExchangeMCPServer {
         };
 
         const authService = AuthService.getInstance(authConfig);
-
+        const args: ConstructorParameters<typeof AuthBaseTool> = [authService, this.apiClient, this.logger];
         this.tools = [
-            new UserTools(this.apiClient, this.logger),
-            new QuestionTools(this.apiClient, this.logger),
-            new AnswerTools(this.apiClient, this.logger),
-            new CommentTools(this.apiClient, this.logger),
-            new TagTools(this.apiClient, this.logger),
-            new PostTools(this.apiClient, this.logger),
-            new WriteTools(this.apiClient, authService, this.logger),
+            new UserTools(...args),
+            new QuestionTools(...args),
+            new AnswerTools(...args),
+            new CommentTools(...args),
+            new TagTools(...args),
+            new PostTools(...args),
+            new WriteTools(...args),
             new DebugTools(this.logger)
         ];
         console.error('[DEBUG] Tools initialized');
@@ -106,7 +107,7 @@ export class StackExchangeMCPServer {
 
     private setupToolHandlers() {
         console.error('[DEBUG] Setting up tool handlers');
-        
+
         // List available tools
         this.server.setRequestHandler(ListToolsRequestSchema, async (request) => {
             console.error('[DEBUG] Handling ListTools request:', JSON.stringify(request, null, 2));

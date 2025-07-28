@@ -7,11 +7,8 @@ import { AuthService } from '../auth/auth-service.js';
 import { ToolDefinition } from './base-tool.js';
 
 export class WriteTools extends AuthBaseTool {
-    private apiClient: StackExchangeApiClient;
-
-    constructor(apiClient: StackExchangeApiClient, authService: AuthService, logger: Logger) {
-        super(authService, logger);
-        this.apiClient = apiClient;
+    constructor(...args: ConstructorParameters<typeof AuthBaseTool>) {
+        super(...args);
     }
 
     getToolDefinitions(): ToolDefinition[] {
@@ -257,10 +254,6 @@ export class WriteTools extends AuthBaseTool {
     ): Promise<{ content: any[] }> {
         try {
             const options = { site: args.site };
-            const auth = {
-                access_token: args.access_token,
-                api_key: args.api_key
-            };
 
             switch (toolName) {
                 case 'add_question': {
@@ -269,7 +262,7 @@ export class WriteTools extends AuthBaseTool {
                         body: args.body,
                         tags: args.tags
                     };
-                    const result = await this.apiClient.addQuestion(question, auth, options);
+                    const result = await this.apiClient.addQuestion(question, options);
                     return {
                         content: [{
                             type: 'text',
@@ -285,7 +278,7 @@ export class WriteTools extends AuthBaseTool {
                         tags: args.tags,
                         comment: args.comment
                     };
-                    const result = await this.apiClient.editQuestion(args.question_id, edit, auth, options);
+                    const result = await this.apiClient.editQuestion(args.question_id, edit, options);
                     return {
                         content: [{
                             type: 'text',
@@ -295,7 +288,7 @@ export class WriteTools extends AuthBaseTool {
                 }
 
                 case 'delete_question': {
-                    await this.apiClient.deleteQuestion(args.question_id, auth, options);
+                    await this.apiClient.deleteQuestion(args.question_id, options);
                     return {
                         content: [{
                             type: 'text',
@@ -309,7 +302,7 @@ export class WriteTools extends AuthBaseTool {
                         body: args.body,
                         comment: args.comment
                     };
-                    const result = await this.apiClient.addAnswer(args.question_id, answer, auth, options);
+                    const result = await this.apiClient.addAnswer(args.question_id, answer, options);
                     return {
                         content: [{
                             type: 'text',
@@ -319,7 +312,7 @@ export class WriteTools extends AuthBaseTool {
                 }
 
                 case 'delete_answer': {
-                    await this.apiClient.deleteAnswer(args.answer_id, auth, options);
+                    await this.apiClient.deleteAnswer(args.answer_id, options);
                     return {
                         content: [{
                             type: 'text',
@@ -329,7 +322,7 @@ export class WriteTools extends AuthBaseTool {
                 }
 
                 case 'accept_answer': {
-                    const result = await this.apiClient.acceptAnswer(args.answer_id, auth, options);
+                    const result = await this.apiClient.acceptAnswer(args.answer_id, options);
                     return {
                         content: [{
                             type: 'text',
@@ -339,7 +332,7 @@ export class WriteTools extends AuthBaseTool {
                 }
 
                 case 'undo_accept_answer': {
-                    const result = await this.apiClient.undoAcceptAnswer(args.answer_id, auth, options);
+                    const result = await this.apiClient.undoAcceptAnswer(args.answer_id, options);
                     return {
                         content: [{
                             type: 'text',
@@ -349,7 +342,7 @@ export class WriteTools extends AuthBaseTool {
                 }
 
                 case 'recommend_answer': {
-                    const result = await this.apiClient.recommendAnswer(args.answer_id, auth, options);
+                    const result = await this.apiClient.recommendAnswer(args.answer_id, options);
                     return {
                         content: [{
                             type: 'text',
@@ -359,7 +352,7 @@ export class WriteTools extends AuthBaseTool {
                 }
 
                 case 'undo_recommend_answer': {
-                    const result = await this.apiClient.undoRecommendAnswer(args.answer_id, auth, options);
+                    const result = await this.apiClient.undoRecommendAnswer(args.answer_id, options);
                     return {
                         content: [{
                             type: 'text',
@@ -373,7 +366,7 @@ export class WriteTools extends AuthBaseTool {
                         body: args.body,
                         comment: args.comment
                     };
-                    const result = await this.apiClient.addAnswerSuggestedEdit(args.answer_id, edit, auth, options);
+                    const result = await this.apiClient.addAnswerSuggestedEdit(args.answer_id, edit, options);
                     return {
                         content: [{
                             type: 'text',

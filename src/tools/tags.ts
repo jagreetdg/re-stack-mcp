@@ -1,17 +1,11 @@
 // src/tools/tags.ts
-import { BaseTool, ToolDefinition } from './base-tool.js';
-import { StackExchangeApiClient } from '../api/stackexchange.js';
+import { AuthBaseTool } from './auth-base-tool.js';
+import { ToolDefinition } from './base-tool.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { Logger } from '../utils/logger.js';
 
-export class TagTools extends BaseTool {
-    private apiClient: StackExchangeApiClient;
-    private logger: Logger;
-
-    constructor(apiClient: StackExchangeApiClient, logger: Logger) {
-        super();
-        this.apiClient = apiClient;
-        this.logger = logger;
+export class TagTools extends AuthBaseTool {
+    constructor(...args: ConstructorParameters<typeof AuthBaseTool>) {
+        super(...args);
     }
 
     getToolDefinitions(): ToolDefinition[] {
@@ -113,7 +107,7 @@ export class TagTools extends BaseTool {
         ];
     }
 
-    async handleToolCall(
+    protected async handleAuthenticatedToolCall(
         toolName: string,
         args: Record<string, any>
     ): Promise<{ content: any[] }> {

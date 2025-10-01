@@ -174,8 +174,8 @@ export interface ApiResponse<T> {
 }
 
 export interface AuthenticatedRequest {
-    access_token: string;
-    api_key: string;
+    access_token?: string;
+    key?: string;
 }
 
 export interface QuestionRequest {

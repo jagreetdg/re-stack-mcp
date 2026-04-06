@@ -230,6 +230,28 @@ export class StackExchangeApiClient {
         }
     }
 
+    async getQuestionAnswers(questionId: number, options: StackExchangeApiOptions = {}): Promise<AnswerResponse[]> {
+        try {
+            this.logger.info(`Fetching answers for question: ${questionId} on ${options.site || 'stackoverflow'}`);
+
+            const response = await this.client.get<ApiResponse<AnswerResponse>>(`/questions/${questionId}/answers`, {
+                params: {
+                    site: options.site || 'stackoverflow',
+                    filter: options.filter || 'withbody',
+                    page: options.page,
+                    pagesize: options.pagesize || 100,
+                    order: options.order || 'desc',
+                    sort: options.sort || 'votes'
+                }
+            });
+
+            return response.data.items;
+        } catch (error) {
+            this.logger.error('Failed to fetch question answers', error);
+            throw error;
+        }
+    }
+
     async searchQuestions(
         query: string,
         options: StackExchangeApiOptions & { tags?: string[] } = {}

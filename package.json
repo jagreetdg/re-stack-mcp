@@ -5,7 +5,8 @@
     "main": "build/index.js",
     "type": "module",
     "bin": {
-        "re-stack-mcp": "build/index.js"
+        "re-stack-mcp": "build/index.js",
+        "stackexchange-cli": "build/cli.js"
     },
     "scripts": {
         "start": "node build/index.js",

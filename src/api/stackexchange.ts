@@ -48,7 +48,7 @@ export class StackExchangeApiClient {
             // **if** setAuth() has been called with a non-null auth
             // before handleAuthenticatedToolCall() runs
             // @see auth-base-tool.ts's handleToolCal()
-            config.params = {...config.params, ...this.auth},
+            config.params = {...config.params, ...this.auth};
             this.logger.debug('Making request', {
                 method: config.method,
                 url: config.url,

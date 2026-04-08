@@ -305,7 +305,16 @@ class StackExchangeCLI {
             const arg = args[i];
 
             if (arg === '--output' || arg === '-o') {
-                outputDir = args[++i];
+                const nextArg = args[i + 1];
+
+                if (!nextArg || nextArg.startsWith('-')) {
+                    console.error('Error: Missing output directory after --output/-o');
+                    this.printHelp();
+                    process.exit(1);
+                }
+
+                outputDir = nextArg;
+                i++;
             } else if (arg === '--auth' || arg === '-a') {
                 useAuth = true;
             } else if (arg === '--help' || arg === '-h') {

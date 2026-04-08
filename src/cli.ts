@@ -56,11 +56,6 @@ interface FetchedData {
     timestamp: string;
 }
 
-interface ResumeState {
-    completed: string[];
-    failed: string[];
-}
-
 class StackExchangeCLI {
     private logger: Logger;
     private apiClient: StackExchangeApiClient;
